@@ -1,0 +1,189 @@
+# =====================================================
+# 🌐 MERN STACK (FRONTEND + BACKEND)
+# =====================================================
+
+# Node dependencies
+node_modules/
+jspm_packages/
+uploads/
+
+# Package managers
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Build outputs
+build/
+dist/
+.next/
+out/
+storybook-static/
+vite-dist/
+.vite/
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+.npm/
+
+# =====================================================
+# 🖥️ FRONTEND ASSETS (OPTIONAL – KEEP IF NOT NEEDED)
+# =====================================================
+*.jpg
+*.png
+*.gif
+*.svg
+*.sourcemap
+*.csv
+
+# =====================================================
+# 🐍 PYTHON DESKTOP APP
+# =====================================================
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+.python-version
+
+# Python build artifacts
+build/
+dist/
+develop-eggs/
+eggs/
+.eggs/
+sdist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Test & coverage
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+pytest_cache/
+nosetests.xml
+coverage.xml
+
+# =====================================================
+# 📦 INSTALLERS & DISTRIBUTION FILES (IMPORTANT)
+# =====================================================
+
+# PyInstaller / binary outputs
+# *.exe
+*.msi
+*.dll
+*.so
+*.dmg
+*.app/
+*.deb
+*.rpm
+*.manifest
+*.spec
+
+# Archives (installer zips)
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# 🚫 Backend download folder (installer lives here on server only)
+# backend/public/downloads/
+installer/
+# =====================================================
+# 🧩 PYTHON DESKTOP FRAMEWORKS
+# =====================================================
+
+# Kivy
+.kivy/
+.kivy_build/
+
+# Qt / PyQt
+*.ui~
+*.qmlc
+*.jsc
+*.qrc
+*.pyqt5/
+*.db
+*.ini
+
+# Tkinter temp files
+*.py~
+*.tmp
+*.bak
+
+# =====================================================
+# 💾 DATABASES & LOCAL DATA
+# =====================================================
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+data/
+database/
+
+# =====================================================
+# 🧠 IDEs & EDITORS
+# =====================================================
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# PyCharm / IntelliJ
+.idea/
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# =====================================================
+# 🖥️ OS FILES
+# =====================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+Icon?
+ehthumbs.db
+
+# =====================================================
+# 🧪 TEMP / SCRATCH
+# =====================================================
+scratch/
+temp/
+tmp/
+*.swp
+*.swo
+*.orig
+*.iss
+
+# =====================================================
+# ✅ END
+# =====================================================
+*.env
+*.env.example
+*.trae
