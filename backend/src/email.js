@@ -1,35 +1,22 @@
-import nodemailer from 'nodemailer';
 import fs from 'fs'
 import path from 'path'
 
-// Use environment variables for credentials
-// In development, you can use Ethereal (https://ethereal.email) if no Gmail credentials provided
-const config = process.env.EMAIL_HOST ? {
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT) || 587,
-  secure: Number(process.env.EMAIL_PORT) === 465,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-} : {
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-};
+// Resend REST API client (HTTPS port 443 — no SMTP port block issues)
+const RESEND_API_KEY = String(process.env.EMAIL_PASS || process.env.RESEND_API_KEY || '').trim()
 
-const transporter = nodemailer.createTransport(config);
-
-// Verify connection configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.warn('[Email] Connection warning:', error.message);
-  } else {
-    console.log('[Email] Server is ready to take our messages');
+function buildResendAttachment(att) {
+  if (!att || !att.path) return null
+  try {
+    const content = fs.readFileSync(att.path)
+    return {
+      filename: att.filename || path.basename(att.path),
+      content: content.toString('base64'),
+      encoding: 'base64',
+    }
+  } catch {
+    return null
   }
-});
+}
 
 function slugifyName(name) {
   return String(name || '')
@@ -137,37 +124,49 @@ function renderEmail({ companyName, companyId, companyLogoUrl, preheader, title,
 
 export async function sendEmail(to, subject, text, html, extra = {}) {
   // If no credentials, log and return
-  if (!process.env.EMAIL_USER || process.env.EMAIL_USER.includes('example.com')) {
+  if (!RESEND_API_KEY || RESEND_API_KEY.includes('example.com')) {
     console.log('[Email] Mock send (No credentials):', { to, subject });
     return true;
   }
 
+  const from = process.env.EMAIL_FROM || '"Time Tracker" <noreply@timetracker.com>'
+
+  const body = {
+    from,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    text,
+    html: html || text,
+  }
+
+  // Handle attachments (Resend API: array of { filename, content (base64) })
+  if (extra?.attachments?.length) {
+    body.attachments = extra.attachments.map(buildResendAttachment).filter(Boolean)
+  }
+
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Time Tracker" <noreply@timetracker.com>',
-      to,
-      subject,
-      text,
-      html: html || text,
-      ...(extra || {})
-    });
-    console.log('[Email] Sent:', info.messageId);
-    return true;
-  } catch (error) {
-    // Auth errors: log details and throw so callers can detect failure
-    if (error.code === 'EAUTH' || error.responseCode === 535) {
-      console.error('[Email] Authentication Failed. Check EMAIL_USER, EMAIL_PASS, and domain verification.');
-      console.error('[Email] Original error:', error.message);
-      console.log('   --- Email content (not sent) ---');
-      console.log(`   To: ${to}`);
-      console.log(`   Subject: ${subject}`);
-      console.log(`   Body: ${text}`);
-      console.log('   ---------------------------------');
-      throw new Error(`Email auth failed: ${error.message}`);
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      const errMsg = result?.message || result?.error || `HTTP ${response.status}`
+      console.error('[Email] Resend API error:', JSON.stringify(result))
+      throw new Error(`Email send failed: ${errMsg}`)
     }
-    
-    console.error('[Email] Send failed:', error.message);
-    throw error;
+
+    console.log('[Email] Sent via Resend API:', result?.id || 'ok')
+    return true
+  } catch (error) {
+    console.error('[Email] Send failed:', error.message)
+    throw error
   }
 }
 
