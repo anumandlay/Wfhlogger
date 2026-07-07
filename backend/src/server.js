@@ -375,7 +375,9 @@ app.post('/api/auth/signup', async (req, res) => {
     // Create Default Team (Organization) linked to company
     createOrganization({ name: `${companyName}`, managerId: user.id, company_id: company.id });
 
-    // Send activation email instead of returning a token
+    // Send activation email
+    let emailSent = false
+    let emailError = null
     try {
       const baseUrl = String(process.env.APP_URL || 'http://localhost:5173').replace(/\/+$/, '')
       const slug = String(companyName || 'company').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'company'
@@ -383,8 +385,22 @@ app.post('/api/auth/signup', async (req, res) => {
       const activateUrl = `${baseUrl}/api/auth/activate/${company.activation_token}`
       
       await sendActivationEmail(email, { fullName, companyName, activateUrl, loginUrl, password })
+      emailSent = true
     } catch (emailErr) {
-      console.warn('[auth:signup] activation email failed:', emailErr);
+      console.error('[auth:signup] Activation email failed:', emailErr?.message || emailErr)
+      emailError = emailErr?.message || 'Email service unavailable'
+    }
+
+    if (!emailSent) {
+      // Company + user created, but email failed. Return partial success with warning.
+      return res.status(201).json({
+        ok: true,
+        message: 'Workspace created but activation email could not be sent.',
+        needsActivation: true,
+        activation_email: email,
+        email_error: emailError,
+        activation_token: company.activation_token
+      })
     }
     
     res.status(201).json({ ok: true, message: 'Workspace created! Check your email for the activation link.', needsActivation: true, activation_email: email });

@@ -154,21 +154,20 @@ export async function sendEmail(to, subject, text, html, extra = {}) {
     console.log('[Email] Sent:', info.messageId);
     return true;
   } catch (error) {
-    // Graceful fallback for Auth errors (Common in Dev)
+    // Auth errors: log details and throw so callers can detect failure
     if (error.code === 'EAUTH' || error.responseCode === 535) {
-      console.warn('⚠️ [Email] Authentication Failed. Please check EMAIL_USER and EMAIL_PASS in .env');
-      console.warn('   For Gmail, ensure you are using an App Password, not your login password.');
-      console.log('   (Falling back to console log so the app flow continues)');
-      console.log('   -------------------------------------------------------');
+      console.error('[Email] Authentication Failed. Check EMAIL_USER, EMAIL_PASS, and domain verification.');
+      console.error('[Email] Original error:', error.message);
+      console.log('   --- Email content (not sent) ---');
       console.log(`   To: ${to}`);
       console.log(`   Subject: ${subject}`);
       console.log(`   Body: ${text}`);
-      console.log('   -------------------------------------------------------');
-      return true; // Return success to not block the calling function
+      console.log('   ---------------------------------');
+      throw new Error(`Email auth failed: ${error.message}`);
     }
     
-    console.error('[Email] Error:', error);
-    return false;
+    console.error('[Email] Send failed:', error.message);
+    throw error;
   }
 }
 
