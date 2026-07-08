@@ -904,7 +904,7 @@ export function creditCompanyWithTransaction({ company_id, amount_usd, credits, 
   const now = new Date().toISOString()
   if (db) {
     const tx = db.transaction(() => {
-      const upd = db.prepare('UPDATE companies SET credits = credits + ?, plan = CASE WHEN ? > 0 THEN "pro" ELSE plan END, updated_at = ? WHERE id = ?')
+      const upd = db.prepare('UPDATE companies SET credits = credits + ?, plan = CASE WHEN ? > 0 THEN ''pro'' ELSE plan END, updated_at = ? WHERE id = ?')
       upd.run(credits, credits, now, company_id)
       const ins = db.prepare('INSERT INTO transactions (company_id, amount, credits, type, description, reference_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       ins.run(company_id, amount_usd, credits, 'credit', description || '', reference_id || '', 'success', now)
@@ -952,7 +952,7 @@ export function applyStripeCheckoutCreditsOnce({ company_id, user_id, session_id
         return { applied: false, credits: Number(row?.credits || 0) }
       }
 
-      db.prepare('UPDATE companies SET credits = credits + ?, plan = CASE WHEN ? > 0 THEN "pro" ELSE plan END, updated_at = ? WHERE id = ?')
+      db.prepare('UPDATE companies SET credits = credits + ?, plan = CASE WHEN ? > 0 THEN ''pro'' ELSE plan END, updated_at = ? WHERE id = ?')
         .run(c, c, now, cid)
 
       db.prepare('INSERT INTO transactions (company_id, amount, credits, type, description, reference_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')

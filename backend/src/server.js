@@ -3782,7 +3782,7 @@ app.get('/api/platform/companies/:company_id/transactions', requireRole(['super_
   }
 })
 
-app.post('/api/platform/companies/:company_id/grant-credits', requireRole(['super_admin']), (req, res) => {
+app.post('/api/platform/companies/:company_id/grant-credits', requireRole(['super_admin']), async (req, res) => {
   try {
     const company_id = Number(req.params.company_id)
     const company = getCompanyById(company_id)
@@ -3809,25 +3809,23 @@ app.post('/api/platform/companies/:company_id/grant-credits', requireRole(['supe
     try { appendAudit('company_free_credits_granted', { company_id, credits, reason, actorId: req.user?.uid || req.user?.sub, actorEmail }, company_id) } catch {}
     try { io.to(`company:${company_id}`).emit('company:credits_updated', { company_id, balance: newBalance }) } catch {}
 
-    // Send email to company admin about free credits
-    try {
-      const adminEmail = getCompanyAdminEmail(company_id, company)
-      if (adminEmail) {
-        sendPaymentSuccess({
-          to: adminEmail,
-          company: { name: company.name, id: company_id, logo_url: company.logo_url },
-          amount_usd: 0,
-          credits,
-          balance: newBalance,
-          description: reason || 'Free credits grant'
-        })
-      }
-    } catch {}
+    // Send email to company admin about free credits (async, fire-and-forget with error logging)
+    const adminEmail = getCompanyAdminEmail(company_id, company)
+    if (adminEmail) {
+      sendPaymentSuccess({
+        to: adminEmail,
+        company: { name: company.name, id: company_id, logo_url: company.logo_url },
+        amount_usd: 0,
+        credits,
+        balance: newBalance,
+        description: reason || 'Free credits grant'
+      }).catch(err => console.error('[platform:grant-credits] email failed:', err?.message || err))
+    }
 
     res.json({ ok: true, company_id, balance: newBalance, reference_id: ref })
   } catch (e) {
-    console.error('[platform:grant-credits] error:', e)
-    res.status(500).json({ error: 'Failed to grant credits' })
+    console.error('[platform:grant-credits] error:', e?.message || e, e?.stack)
+    res.status(500).json({ error: 'Failed to grant credits', details: e?.message || String(e) })
   }
 })
 
