@@ -25,7 +25,7 @@ except Exception:
 
 
 # Default configuration
-DEFAULT_BACKEND_URL = os.environ.get('BACKEND_URL', 'https://backend.wfhlogger.com')
+DEFAULT_BACKEND_URL = os.environ.get('BACKEND_URL', 'https://wfhlogger.com')
 SCREENSHOT_INTERVAL_SECONDS = int(os.environ.get('SCREENSHOT_INTERVAL_SECONDS', '180'))
 LIVE_VIEW_INTERVAL_SECONDS = 2
 HEARTBEAT_INTERVAL_SECONDS = int(os.environ.get('HEARTBEAT_INTERVAL_SECONDS', '60'))

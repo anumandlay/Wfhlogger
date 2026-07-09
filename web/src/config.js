@@ -8,7 +8,7 @@ export function getApiBase() {
     const isProduction = hostname !== 'localhost' && hostname !== '127.0.0.1'
     if (isProduction) {
       if (hostname === 'tracker.vughy.com') return 'https://backend-tracker.vughy.com'
-      if (hostname === 'wfhlogger.com' || hostname === 'www.wfhlogger.com') return 'https://backend.wfhlogger.com'
+      if (hostname === 'wfhlogger.com' || hostname === 'www.wfhlogger.com') return 'https://wfhlogger.com'
       return origin.replace(/\/$/, '')
     }
   }
