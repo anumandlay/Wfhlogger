@@ -858,15 +858,33 @@ app.get('/api/uploads/preview/:key', async (req, res) => {
     const { stream, contentType } = await getScreenshotStream(s3key)
     res.setHeader('Content-Type', contentType)
     res.setHeader('Content-Disposition', 'inline')
-    try {
-      const nodeStream = Readable.fromWeb(stream)
-      nodeStream.on('error', () => { try { res.end() } catch {} })
-      nodeStream.pipe(res)
-    } catch {
-      const ab = await stream.arrayBuffer()
-      res.end(Buffer.from(ab))
+    res.setHeader('Cache-Control', 'public, max-age=300')
+    // AWS SDK v3 in Node returns a Node.js Readable, pipe directly.
+    // If it's a web ReadableStream, convert via Readable.fromWeb.
+    if (stream && typeof stream.pipe === 'function') {
+      stream.on('error', () => { try { res.end() } catch {} })
+      stream.pipe(res)
+    } else if (stream) {
+      try {
+        const nodeStream = Readable.fromWeb(stream)
+        nodeStream.on('error', () => { try { res.end() } catch {} })
+        nodeStream.pipe(res)
+      } catch {
+        // Fallback: read entire stream to buffer
+        const reader = stream.getReader()
+        const chunks = []
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          chunks.push(value)
+        }
+        res.end(Buffer.concat(chunks))
+      }
+    } else {
+      res.status(404).end()
     }
   } catch (e) {
+    console.error('[upload:preview] error:', e?.message || e)
     res.status(500).end()
   }
 })

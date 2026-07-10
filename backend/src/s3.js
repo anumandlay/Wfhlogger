@@ -66,6 +66,7 @@ export async function getScreenshotStream(key) {
   const client = getS3Client()
   const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: key })
   const result = await client.send(cmd)
+  console.log(`[s3] Fetched: ${key} (${result.ContentType}, ${result.ContentLength} bytes)`)
   return {
     stream: result.Body,
     contentType: result.ContentType || 'image/jpeg',
