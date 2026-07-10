@@ -124,6 +124,41 @@ flowchart LR
   Viewers --start/stop--> Srv
 ```
 
+### S3 Screenshot Storage Flow
+
+```mermaid
+sequenceDiagram
+    participant DC as Desktop Client
+    participant BE as Backend (Express)
+    participant S3 as AWS S3
+    participant DB as Metadata (JSON)
+    participant FE as Manager Dashboard
+
+    DC->>DC: mss captures screen
+    DC->>DC: JPEG encode (quality 70)
+    DC->>BE: POST /api/uploads/drive<br/>multipart: screenshot
+    BE->>BE: multer memoryStorage<br/>file in RAM
+
+    BE->>S3: PutObject<br/>Bucket: wfhlogger (us-east-2)
+    S3-->>BE: ETag ✓
+    BE->>DB: append screenshots.s3.json<br/>{company_id, employee_id, s3_key, captured_at}
+
+    Note over S3: Key format:<br/>screenshots/{companyId}/{email}/{YYYY}/{MM}/{DD}/{timestamp}_screenshot.jpg
+
+    FE->>BE: GET /api/uploads/list
+    BE->>DB: read screenshots.s3.json
+    DB-->>BE: file list + preview tokens
+    BE-->>FE: { files: [{s3_key, preview_url, ...}] }
+
+    FE->>BE: GET /api/uploads/preview/:key?pt={token}
+    BE->>BE: verify preview token (HMAC)
+    BE->>S3: GetObject
+    S3-->>BE: image/jpeg stream
+    BE-->>FE: stream image (Cache-Control: 5min)
+
+    Note over FE: Renders in Dashboard<br/>Latest Screenshots grid<br/>+ Time Tracking page
+```
+
 ## Installation & Setup
 
 Prerequisites
