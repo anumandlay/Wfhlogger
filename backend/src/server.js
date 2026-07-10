@@ -804,7 +804,13 @@ app.post('/api/uploads/drive', requireRole(['employee']), multer({ storage: mult
     const company_id = req.user?.company_id
     const employee_id = req.user?.sub
     const now = new Date()
-    const { key } = await uploadScreenshot(req.file?.buffer || Buffer.alloc(0), company_id, employee_id, now)
+    if (!req.file) {
+      console.error('[upload:drive] No file in request. Body keys:', Object.keys(req.body || {}))
+      return res.status(400).json({ error: 'No screenshot file provided' })
+    }
+    console.log(`[upload:drive] Received ${req.file.size} bytes from ${employee_id} (company ${company_id})`)
+    const { key } = await uploadScreenshot(req.file.buffer, company_id, employee_id, now)
+    console.log(`[upload:drive] Stored to S3: ${key}`)
     const meta = readJSON(screenshotsS3File)
     let manager_id = null
     try {
@@ -815,7 +821,8 @@ app.post('/api/uploads/drive', requireRole(['employee']), multer({ storage: mult
     writeJSON(screenshotsS3File, meta)
     res.json({ ok: true, s3_key: key, captured_at: now.toISOString() })
   } catch (e) {
-    res.status(500).json({ error: 'upload_failed' })
+    console.error('[upload:drive] FAILED:', e?.message || e, e?.stack?.split('\n')[0])
+    res.status(500).json({ error: 'upload_failed', details: e?.message || String(e) })
   }
 })
 

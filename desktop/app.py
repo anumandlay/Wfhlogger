@@ -675,12 +675,25 @@ class TimeTrackerApp:
             return full, small
 
     def _upload_screenshot(self, jpeg_bytes):
+        url = f'{self.backend_url}/api/uploads/drive'
         try:
             files = { 'screenshot': ('screenshot.jpg', jpeg_bytes, 'image/jpeg') }
             headers = { 'Authorization': f'Bearer {self.token}' }
-            requests.post(f'{self.backend_url}/api/uploads/drive', files=files, headers=headers, timeout=30)
-            self.last_upload_var.set(self._format_hhmm_in_effective_tz(datetime.now(timezone.utc)))
-        except:
+            resp = requests.post(url, files=files, headers=headers, timeout=30)
+            if resp.status_code == 200 or resp.status_code == 201:
+                self.last_upload_var.set(self._format_hhmm_in_effective_tz(datetime.now(timezone.utc)))
+                print(f'[upload] OK {len(jpeg_bytes)} bytes')
+            else:
+                print(f'[upload] HTTP {resp.status_code}: {resp.text[:200]}')
+                self.last_upload_var.set(f"HTTP {resp.status_code}")
+        except requests.exceptions.Timeout:
+            print('[upload] TIMEOUT')
+            self.last_upload_var.set("Timeout")
+        except requests.exceptions.ConnectionError as e:
+            print(f'[upload] CONNECTION ERROR: {e}')
+            self.last_upload_var.set("No Connection")
+        except Exception as e:
+            print(f'[upload] ERROR: {e}')
             self.last_upload_var.set("Failed")
 
     def _detect_system_timezone(self):
